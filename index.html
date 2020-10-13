@@ -1,28 +1,197 @@
 <!DOCTYPE html>
 <!-- This Site Created By Kıraç Armağan Önal -->
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:site_name" content="armagann.github.io" />
+    <meta property="og:site_name" content="kao.web.tr" />
     <meta property="og:title" content="GeForce NOW - Supported Games" />
-    <meta property="og:image" content="https://armagann.github.io/nvidia-geforce-now-supported-games/nvidia_logo.png" />
+    <meta property="og:description" content="This site allows you to list and filter all supported games by GeForce NOW!" />
+    <meta property="og:image"
+        content="https://thearmagan.github.io/nvidia-geforce-now-supported-games/images/nvidia_logo.png" />
     <meta name="theme-color" content="#75B800">
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Poppins:300,400,500,700&display=swap');
+
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins';
+        }
+
+        body {
+            pointer-events: all;
+            opacity: 1;
+            transition: opacity 300ms ease-in-out;
+        }
+
+        body.hidden {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 1rem;
+        }
+
+        ::-webkit-scrollbar-track {
+            background-color: rgb(59, 59, 59);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgb(8, 8, 8);
+        }
+
+
+        .pad-fix {
+            padding: 1rem !important;
+        }
+
+        .pad0 {
+            padding: 0 !important;
+        }
+
+        .mar0 {
+            margin: 0 !important;
+        }
+
+        .game-panel .game-name {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        nav {
+            padding: 0 1rem;
+            background-color: #5D9200;
+        }
+
+        /* label underline focus color */
+        .input-field input[type=text]:focus {
+            border-bottom: 1px solid #b8ff3e !important;
+            box-shadow: 0 1px 0 0 #B4FA3D !important;
+        }
+
+        /* label underline focus color */
+        .input-field input[type=text] {
+            border-bottom: 1px solid #ffffff !important;
+        }
+        /* icon prefix focus color */
+        .input-field .prefix.active {
+            color: #b8ff3e !important;
+        }
+
+        main {
+            margin-top: 1rem;
+        }
+
+        .result-panel {
+            position: relative;
+
+            color: #eeeeee;
+            background-color: #303030;
+
+            border-left: 0.2rem solid #FF932D;
+        }
+
+        .result-panel.fully-optimized {
+            border-left: 0.2rem solid #4ff540 !important;
+        }
+
+        .result-panel h1 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 0.6rem !important;
+        }
+
+        .result-panel h3 {
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        .result-panel h6 {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            opacity: 0.6;
+            font-style: italic;
+            font-size: 0.6rem;
+        }
+
+        .result-panel .steam-link img {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            width: 2rem !important;
+            filter: grayscale(1);
+        }
+
+        .result-panel .steam-link img:hover {
+            filter: grayscale(0);
+        }
+
+        .info-card {
+            color: #eeeeee;
+            background-color: #333333;
+            font-size: 1.2rem;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <title>GeForce NOW - Supported Games</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Nvidia GeForce Now</h1>
-            <h3>Supported Games</h3>
-        </div>
-        <div class="supported-list">
-            <div class="sl-header">
-                <p class="total-supported-games">Total: <span class="value">[Loading Please Wait..]</span></p>
-            </div>
+
+<body class="hidden grey darken-4 white-text">
+    <div id="vue-app">
+        <div class="container">
+            <nav>
+                <div class="nav-wrapper">
+                    <a href="#!" class="brand-logo">
+                        <div v-if="!isInSearchMode" class="row mar0 pad0" v-html="topText"></div>
+                    </a>
+                    <ul v-if="isInSearchMode" class="left">
+                        <li>
+                            <div style="top: 0%;" class="input-field">
+                                <i style="top: 0%;" class="material-icons prefix">search</i>
+                                <input @input="onSearchInput" style="width: 140%;" placeholder="Search" type="text" class="white-text">
+                            </div>
+                        </li>
+                    </ul>
+                    <ul class="right">
+                        <li @click="isInSearchMode = !isInSearchMode; (filterText = '')" :class="{'active': isInSearchMode}"><a href="#"><i class="material-icons">search</i></a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main>
+                <div class="info-card card-panel">
+                    <p>> Total <strong>{{filteredGames.length}}</strong> game..</p>
+                    <p>> <strong>{{filteredGames.filter(i=>i.isFullyOptimized).length}}</strong> fully optimized game..</p>
+                </div>
+                <div class="row">
+                    <div v-for="(item, index) in filteredGames" :key="index" class="col s12">
+                        <div :class="{'fully-optimized': item.isFullyOptimized}" class="result-panel card-panel">
+                            <h1 class="mar0">{{item.title}}</h1>
+                            <h3 class="mar0">{{item.publisher}}</h3>
+                            <a v-if="item.steamUrl" :href="item.steamUrl" class="steam-link">
+                                <img src="./images/steam_logo.png">
+                            </a>
+                            <h6 class="mar0">{{item.isFullyOptimized ? "" : "Not "}}Fully Optimized</h6>
+                        </div>
+                    </div>
+                    <div v-if="!filteredGames.length">
+                        <h1>No Results Found</h1>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js"></script>
+    <script src="./scripts/script.js"></script>
 </body>
+
 </html>
